@@ -124,6 +124,61 @@ if st.session_state.cases is not None and st.session_state.search_info is not No
         
         st.markdown("---")
         
+        # Export options at the top
+        st.subheader("📥 Export Data")
+        
+        col_export1, col_export2 = st.columns(2)
+        
+        with col_export1:
+            # CSV export
+            df = pd.DataFrame(cases)
+            csv = df.to_csv(index=False)
+            
+            st.download_button(
+                label="📊 Download CSV",
+                data=csv,
+                file_name=f"court_cases_{search_info['first_name']}_{search_info['last_name']}_{datetime.now().strftime('%Y%m%d')}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+        
+        with col_export2:
+            # ICS calendar export (all cases)
+            with st.popover("📅 Download All as Calendar", use_container_width=True):
+                st.write("**Enter details for all calendar events:**")
+                combined_filevine_link = st.text_input(
+                    "FileVine Link",
+                    placeholder="https://filevine.com/...",
+                    key="combined_filevine"
+                )
+                combined_attorney_name = st.text_input(
+                    "Attorney Name",
+                    placeholder="attorney",
+                    key="combined_email",
+                    help="Enter just the name (e.g., 'chris' for chris@dexterlaw.com)"
+                )
+                # Auto-append @dexterlaw.com
+                if combined_attorney_name and combined_attorney_name.strip():
+                    combined_attorney_email = f"{combined_attorney_name.strip()}@dexterlaw.com"
+                    st.caption(f"📧 Will use: {combined_attorney_email}")
+                else:
+                    combined_attorney_email = ""
+                    st.caption("📧 Will use: attorney@dexterlaw.com (default)")
+                
+                all_ics_content = cases_to_ics(cases, filevine_link=combined_filevine_link, attorney_email=combined_attorney_email)
+                ics_filename = f"calendar_{search_info['first_name']}_{search_info['last_name']}_{datetime.now().strftime('%Y%m%d')}.ics"
+                
+                st.download_button(
+                    label="💾 Generate & Download All",
+                    data=all_ics_content,
+                    file_name=ics_filename,
+                    mime="text/calendar",
+                    use_container_width=True,
+                    key="combined_ics_download"
+                )
+        
+        st.markdown("---")
+        
         # Display each case
         for idx, case in enumerate(cases, 1):
                         with st.expander(
@@ -209,59 +264,6 @@ if st.session_state.cases is not None and st.session_state.search_info is not No
                                         key=f"ics_download_{idx}",
                                         use_container_width=True
                                     )
-        
-        # Export option
-        st.markdown("---")
-        st.subheader("📥 Export Data")
-        
-        col_export1, col_export2 = st.columns(2)
-        
-        with col_export1:
-            # CSV export
-            df = pd.DataFrame(cases)
-            csv = df.to_csv(index=False)
-            
-            st.download_button(
-                label="📊 Download CSV",
-                data=csv,
-                file_name=f"court_cases_{search_info['first_name']}_{search_info['last_name']}_{datetime.now().strftime('%Y%m%d')}.csv",
-                mime="text/csv",
-                use_container_width=True
-            )
-        
-        with col_export2:
-            # ICS calendar export (all cases)
-            with st.popover("📅 Download All as Calendar", use_container_width=True):
-                st.write("**Enter details for all calendar events:**")
-                combined_filevine_link = st.text_input(
-                    "FileVine Link",
-                    placeholder="https://filevine.com/...",
-                    key="combined_filevine"
-                )
-                combined_attorney_name = st.text_input(
-                    "Attorney Name",
-                    placeholder="attorney",
-                    key="combined_email",
-                    help="Enter just the name (e.g., 'chris' for chris@dexterlaw.com)"
-                )
-                # Auto-append @dexterlaw.com
-                combined_attorney_email = f"{combined_attorney_name.strip()}@dexterlaw.com" if combined_attorney_name.strip() else ""
-                
-                # Show preview of what will be used
-                if combined_attorney_email:
-                    st.caption(f"📧 Will use: {combined_attorney_email}")
-                
-                all_ics_content = cases_to_ics(cases, filevine_link=combined_filevine_link, attorney_email=combined_attorney_email)
-                ics_filename = f"calendar_{search_info['first_name']}_{search_info['last_name']}_{datetime.now().strftime('%Y%m%d')}.ics"
-                
-                st.download_button(
-                    label="💾 Generate & Download All",
-                    data=all_ics_content,
-                    file_name=ics_filename,
-                    mime="text/calendar",
-                    use_container_width=True,
-                    key="combined_ics_download"
-                )
 
 else:
     # Welcome message when no search has been performed
