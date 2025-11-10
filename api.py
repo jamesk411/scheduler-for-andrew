@@ -4,6 +4,8 @@ import uvicorn
 
 from search import search_court_cases
 
+PORT = 8001
+
 app = FastAPI(
     title="Utah Court Calendar API",
     description="API for searching Utah court calendar by attorney name",
@@ -78,12 +80,12 @@ async def health_check():
 if __name__ == "__main__":
     # Run the API server
     print("🚀 Starting Utah Court Calendar API...")
-    print("📖 API Documentation: http://localhost:8000/docs")
-    print("🔍 Example: http://localhost:8000/search/attorney?first_name=CHRIS&last_name=DEXTER")
-    
+    print(f"📖 API Documentation: http://localhost:{PORT}/docs")
+    print(f"🔍 Example: http://localhost:{PORT}/search/attorney?first_name=CHRIS&last_name=DEXTER")
+
     uvicorn.run(
         "api:app",
         host="0.0.0.0",
-        port=8000,
+        port=PORT,
         reload=True
     )

@@ -1,16 +1,66 @@
-# Utah Court Calendar API
+# Utah Court Calendar System
 
-A simple API for searching Utah court calendar by attorney name.
+A complete system for searching Utah court calendar by attorney name, including a web frontend, REST API, and Python module.
 
-## Setup
+## 🚀 Quick Start
 
-1. Install dependencies:
+### Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Running the API
+### Option 1: Web Frontend (Streamlit)
+
+The easiest way to search for cases with a visual interface:
+
+```bash
+streamlit run app.py
+```
+
+Then open your browser to **http://localhost:8501**
+
+### Option 2: REST API (FastAPI)
+
+For programmatic access or integration with other systems:
+
+```bash
+python api.py
+```
+
+The API will be available at **http://localhost:8000**
+
+### Option 3: Python Module
+
+Use directly in your Python code:
+
+```python
+from search import search_court_cases
+
+cases = search_court_cases(
+    search_type="a",
+    first_name="CHRIS",
+    last_name="DEXTER"
+)
+```
+
+---
+
+## 🖥️ Web Frontend Features
+
+The Streamlit web app (`app.py`) provides:
+
+- 🔍 **Simple Search Interface** - Enter attorney name and search
+- 📊 **Summary Metrics** - Total cases, virtual hearings, court types
+- 📋 **Detailed Case Cards** - All case information in organized expandable cards
+- 🎥 **WebEx Links** - Direct links to join virtual hearings
+- 📥 **Export to CSV** - Download all results for further analysis
+- 📅 **Date Filtering** - Search all dates or specific dates
+- 📍 **Location Filtering** - Filter by court location
+
+---
+
+## 🔌 REST API Documentation
 
 Start the API server:
 
