@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from search import search_court_cases
+from to_ics import cases_to_ics, sanitize_filename
 
 # Page configuration
 st.set_page_config(
@@ -38,6 +39,12 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# Initialize session state
+if 'cases' not in st.session_state:
+    st.session_state.cases = None
+if 'search_info' not in st.session_state:
+    st.session_state.search_info = None
+
 # Header
 st.title("⚖️ Utah Court Calendar Search")
 st.markdown("Search for court cases by attorney name")
@@ -68,7 +75,7 @@ if search_button:
     elif len(first_name) < 2 or len(last_name) < 2:
         st.error("⚠️ First and last name must be at least 2 characters")
     else:
-        with st.spinner("Searching court cases..."):
+        with st.spinner("🔄 Searching court cases..."):
             try:
                 # Search for cases
                 cases = search_court_cases(
@@ -79,30 +86,46 @@ if search_button:
                     location="all"
                 )
                 
-                if not cases:
-                    st.warning(f"No cases found for {first_name.upper()} {last_name.upper()}")
-                else:
-                    # Display summary
-                    st.success(f"✅ Found {len(cases)} case(s) for **{first_name.upper()} {last_name.upper()}**")
-                    
-                    # Summary metrics
-                    col1, col2, col3, col4 = st.columns(4)
-                    with col1:
-                        st.metric("Total Cases", len(cases))
-                    with col2:
-                        webex_count = sum(1 for c in cases if c.get('webex_url'))
-                        st.metric("Virtual Hearings", webex_count)
-                    with col3:
-                        district_count = sum(1 for c in cases if 'District Court' in c.get('court_type', ''))
-                        st.metric("District Court", district_count)
-                    with col4:
-                        justice_count = sum(1 for c in cases if 'Justice Court' in c.get('court_type', ''))
-                        st.metric("Justice Court", justice_count)
-                    
-                    st.markdown("---")
-                    
-                    # Display each case
-                    for idx, case in enumerate(cases, 1):
+                # Store in session state
+                st.session_state.cases = cases
+                st.session_state.search_info = {
+                    'first_name': first_name.upper(),
+                    'last_name': last_name.upper()
+                }
+                
+            except Exception as e:
+                st.error(f"❌ Error searching cases: {str(e)}")
+                st.exception(e)
+
+# Display results if they exist in session state
+if st.session_state.cases is not None:
+    cases = st.session_state.cases
+    search_info = st.session_state.search_info
+    
+    if not cases:
+        st.warning(f"No cases found for {search_info['first_name']} {search_info['last_name']}")
+    else:
+        # Display summary
+        st.success(f"✅ Found {len(cases)} case(s) for **{search_info['first_name']} {search_info['last_name']}**")
+        
+        # Summary metrics
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Total Cases", len(cases))
+        with col2:
+            webex_count = sum(1 for c in cases if c.get('webex_url'))
+            st.metric("Virtual Hearings", webex_count)
+        with col3:
+            district_count = sum(1 for c in cases if 'District Court' in c.get('court_type', ''))
+            st.metric("District Court", district_count)
+        with col4:
+            justice_count = sum(1 for c in cases if 'Justice Court' in c.get('court_type', ''))
+            st.metric("Justice Court", justice_count)
+        
+        st.markdown("---")
+        
+        # Display each case
+        for idx, case in enumerate(cases, 1):
                         with st.expander(
                             f"📋 Case #{idx}: {case.get('case_number', 'N/A')} - {case.get('date', 'N/A')} at {case.get('time', 'N/A')}",
                             expanded=True
@@ -136,9 +159,9 @@ if search_button:
                                 if case.get('attorney'):
                                     st.markdown(f"**Attorney:**  \n{case.get('attorney')}")
                             
-                            # Links
+                            # Links and Downloads
                             st.markdown("---")
-                            link_col1, link_col2 = st.columns(2)
+                            link_col1, link_col2, link_col3 = st.columns(3)
                             
                             with link_col1:
                                 if case.get('webex_url'):
@@ -147,25 +170,54 @@ if search_button:
                             with link_col2:
                                 if case.get('detail_url'):
                                     st.markdown(f"🔗 [View Case Details]({case['detail_url']})")
-                    
-                    # Export option
-                    st.markdown("---")
-                    st.subheader("📥 Export Data")
-                    
-                    # Create DataFrame for export
-                    df = pd.DataFrame(cases)
-                    csv = df.to_csv(index=False)
-                    
-                    st.download_button(
-                        label="Download CSV",
-                        data=csv,
-                        file_name=f"court_cases_{first_name}_{last_name}_{datetime.now().strftime('%Y%m%d')}.csv",
-                        mime="text/csv"
-                    )
-                    
-            except Exception as e:
-                st.error(f"❌ Error searching cases: {str(e)}")
-                st.exception(e)
+                            
+                            with link_col3:
+                                # Generate ICS file for this case
+                                ics_content = cases_to_ics([case])
+                                case_number = case.get('case_number', 'unknown')
+                                defendant = case.get('defendant', 'event').split()[0] if case.get('defendant') else 'event'
+                                defendant = sanitize_filename(defendant.upper())
+                                ics_filename = f"{case_number}_{defendant}.ics"
+                                
+                                st.download_button(
+                                    label="📅 Download .ics",
+                                    data=ics_content,
+                                    file_name=ics_filename,
+                                    mime="text/calendar",
+                                    key=f"ics_{idx}"
+                                )
+        
+        # Export option
+        st.markdown("---")
+        st.subheader("📥 Export Data")
+        
+        col_export1, col_export2 = st.columns(2)
+        
+        with col_export1:
+            # CSV export
+            df = pd.DataFrame(cases)
+            csv = df.to_csv(index=False)
+            
+            st.download_button(
+                label="📊 Download CSV",
+                data=csv,
+                file_name=f"court_cases_{search_info['first_name']}_{search_info['last_name']}_{datetime.now().strftime('%Y%m%d')}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+        
+        with col_export2:
+            # ICS calendar export (all cases)
+            all_ics_content = cases_to_ics(cases)
+            ics_filename = f"calendar_{search_info['first_name']}_{search_info['last_name']}_{datetime.now().strftime('%Y%m%d')}.ics"
+            
+            st.download_button(
+                label="📅 Download All as Calendar",
+                data=all_ics_content,
+                file_name=ics_filename,
+                mime="text/calendar",
+                use_container_width=True
+            )
 
 else:
     # Welcome message when no search has been performed
