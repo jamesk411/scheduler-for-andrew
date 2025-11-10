@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import json
 from datetime import datetime
 from typing import List, Dict, Optional, Any
+from urllib.parse import quote
 
 
 def search_court_cases(
@@ -129,7 +130,9 @@ def parse_court_cases(html_content: str) -> List[Dict[str, Any]]:
             # Extract case detail URL
             href = court_link.get('href', '')
             if href:
-                case_data['detail_url'] = "https://legacy.utcourts.gov/cal/" + str(href)
+                # Replace spaces with %20 for proper URL encoding
+                href_clean = str(href).replace(' ', '%20')
+                case_data['detail_url'] = "https://legacy.utcourts.gov/cal/" + href_clean
         
         # Extract court type (District/Justice)
         court_type_em = container.find('em')
