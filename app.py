@@ -172,20 +172,38 @@ if st.session_state.cases is not None:
                                     st.markdown(f"🔗 [View Case Details]({case['detail_url']})")
                             
                             with link_col3:
-                                # Generate ICS file for this case
-                                ics_content = cases_to_ics([case])
-                                case_number = case.get('case_number', 'unknown')
-                                defendant = case.get('defendant', 'event').split()[0] if case.get('defendant') else 'event'
-                                defendant = sanitize_filename(defendant.upper())
-                                ics_filename = f"{case_number}_{defendant}.ics"
-                                
-                                st.download_button(
-                                    label="📅 Download .ics",
-                                    data=ics_content,
-                                    file_name=ics_filename,
-                                    mime="text/calendar",
-                                    key=f"ics_{idx}"
-                                )
+                                # ICS download with FileVine and email inputs
+                                with st.popover("📅 Download .ics", use_container_width=True):
+                                    st.write("**Enter details for calendar event:**")
+                                    filevine_link = st.text_input(
+                                        "FileVine Link",
+                                        placeholder="https://filevine.com/...",
+                                        key=f"filevine_{idx}"
+                                    )
+                                    attorney_name = st.text_input(
+                                        "Attorney Email",
+                                        placeholder="attorney",
+                                        key=f"email_{idx}",
+                                        help="Enter just the name (e.g., 'chris' for chris@dexterlaw.com)"
+                                    )
+                                    # Auto-append @dexterlaw.com
+                                    attorney_email = f"{attorney_name.strip()}@dexterlaw.com" if attorney_name.strip() else ""
+                                    
+                                    # Generate ICS file with the provided details
+                                    ics_content = cases_to_ics([case], filevine_link=filevine_link, attorney_email=attorney_email)
+                                    case_number = case.get('case_number', 'unknown')
+                                    defendant = case.get('defendant', 'event').split()[0] if case.get('defendant') else 'event'
+                                    defendant = sanitize_filename(defendant.upper())
+                                    ics_filename = f"{case_number}_{defendant}.ics"
+                                    
+                                    st.download_button(
+                                        label="� Generate & Download",
+                                        data=ics_content,
+                                        file_name=ics_filename,
+                                        mime="text/calendar",
+                                        key=f"ics_download_{idx}",
+                                        use_container_width=True
+                                    )
         
         # Export option
         st.markdown("---")
@@ -208,16 +226,33 @@ if st.session_state.cases is not None:
         
         with col_export2:
             # ICS calendar export (all cases)
-            all_ics_content = cases_to_ics(cases)
-            ics_filename = f"calendar_{search_info['first_name']}_{search_info['last_name']}_{datetime.now().strftime('%Y%m%d')}.ics"
-            
-            st.download_button(
-                label="📅 Download All as Calendar",
-                data=all_ics_content,
-                file_name=ics_filename,
-                mime="text/calendar",
-                use_container_width=True
-            )
+            with st.popover("📅 Download All as Calendar", use_container_width=True):
+                st.write("**Enter details for all calendar events:**")
+                combined_filevine_link = st.text_input(
+                    "FileVine Link",
+                    placeholder="https://filevine.com/...",
+                    key="combined_filevine"
+                )
+                combined_attorney_name = st.text_input(
+                    "Attorney Email",
+                    placeholder="attorney",
+                    key="combined_email",
+                    help="Enter just the name (e.g., 'chris' for chris@dexterlaw.com)"
+                )
+                # Auto-append @dexterlaw.com
+                combined_attorney_email = f"{combined_attorney_name.strip()}@dexterlaw.com" if combined_attorney_name.strip() else ""
+                
+                all_ics_content = cases_to_ics(cases, filevine_link=combined_filevine_link, attorney_email=combined_attorney_email)
+                ics_filename = f"calendar_{search_info['first_name']}_{search_info['last_name']}_{datetime.now().strftime('%Y%m%d')}.ics"
+                
+                st.download_button(
+                    label="� Generate & Download All",
+                    data=all_ics_content,
+                    file_name=ics_filename,
+                    mime="text/calendar",
+                    use_container_width=True,
+                    key="combined_ics_download"
+                )
 
 else:
     # Welcome message when no search has been performed

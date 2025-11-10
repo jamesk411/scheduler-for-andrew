@@ -47,21 +47,24 @@ def escape_ics_text(text: str) -> str:
     """Escape special characters for ICS format"""
     if not text:
         return ""
+    # Escape backslashes first (must be done before other escapes)
+    text = text.replace('\\', '\\\\')
     # Replace newlines with \n
     text = text.replace('\n', '\\n')
-    # Escape commas, semicolons, and backslashes
-    text = text.replace('\\', '\\\\')
+    # Escape commas and semicolons
     text = text.replace(',', '\\,')
     text = text.replace(';', '\\;')
     return text
 
 
-def create_ics_event(case: Dict[str, Any]) -> str:
+def create_ics_event(case: Dict[str, Any], filevine_link: str = "", attorney_email: str = "") -> str:
     """
     Create an ICS VEVENT from a court case dictionary.
     
     Args:
         case: Dictionary containing case information
+        filevine_link: FileVine link for the case (optional)
+        attorney_email: Attorney email address (optional)
     
     Returns:
         ICS VEVENT string
@@ -105,9 +108,13 @@ def create_ics_event(case: Dict[str, Any]) -> str:
     summary = escape_ics_text(summary)
     
     # Create description
+    # Use provided values or defaults
+    filevine_display = filevine_link.strip() if filevine_link and filevine_link.strip() else "N/A"
+    email_display = attorney_email.strip() if attorney_email and attorney_email.strip() else "attorney@dexterlaw.com"
+    
     description_parts = [
         "RESTRICTED LINK FOR DEXTER LAW INTERNAL USE ONLY",
-        "N/A",
+        filevine_display,
         "",
         "---",
         "",
@@ -115,7 +122,7 @@ def create_ics_event(case: Dict[str, Any]) -> str:
         "",
         "This is a reminder of your upcoming Court appearance. Please confirm your attendance.",
         "",
-        "For questions, concerns, and technical difficulties you can call or text the number 801-225-9900 or email your primary attorney at attorney@dexterlaw.com and cc assistant Andrew@DexterLaw.com",
+        f"For questions, concerns, and technical difficulties you can call or text the number 801-225-9900 or email your primary attorney at {email_display} and cc assistant Andrew@DexterLaw.com",
         "",
         "If you have a conflict that may prevent your appearance, please reach out.",
         "Please note that a continuance/virtual appearance cannot be guaranteed and it's ultimately up to the Judge's discretion.",
@@ -162,13 +169,15 @@ END:VEVENT"""
     return vevent
 
 
-def cases_to_ics(cases: List[Dict[str, Any]], output_path: Optional[str] = None) -> str:
+def cases_to_ics(cases: List[Dict[str, Any]], output_path: Optional[str] = None, filevine_link: str = "", attorney_email: str = "") -> str:
     """
     Convert a list of court cases to an ICS calendar file.
     
     Args:
         cases: List of case dictionaries
         output_path: Optional path to save the ICS file
+        filevine_link: FileVine link for the case (optional)
+        attorney_email: Attorney email address (optional)
     
     Returns:
         ICS calendar string
@@ -183,7 +192,7 @@ METHOD:PUBLISH
     
     # Add each case as an event
     for case in cases:
-        event = create_ics_event(case)
+        event = create_ics_event(case, filevine_link, attorney_email)
         if event:
             ics_content += event + "\n"
     
