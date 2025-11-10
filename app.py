@@ -98,7 +98,7 @@ if search_button:
                 st.exception(e)
 
 # Display results if they exist in session state
-if st.session_state.cases is not None:
+if st.session_state.cases is not None and st.session_state.search_info is not None:
     cases = st.session_state.cases
     search_info = st.session_state.search_info
     
@@ -181,13 +181,18 @@ if st.session_state.cases is not None:
                                         key=f"filevine_{idx}"
                                     )
                                     attorney_name = st.text_input(
-                                        "Attorney Email",
+                                        "Attorney Name",
                                         placeholder="attorney",
                                         key=f"email_{idx}",
                                         help="Enter just the name (e.g., 'chris' for chris@dexterlaw.com)"
                                     )
                                     # Auto-append @dexterlaw.com
-                                    attorney_email = f"{attorney_name.strip()}@dexterlaw.com" if attorney_name.strip() else ""
+                                    if attorney_name and attorney_name.strip():
+                                        attorney_email = f"{attorney_name.strip()}@dexterlaw.com"
+                                        st.caption(f"📧 Will use: {attorney_email}")
+                                    else:
+                                        attorney_email = ""
+                                        st.caption("📧 Will use: attorney@dexterlaw.com (default)")
                                     
                                     # Generate ICS file with the provided details
                                     ics_content = cases_to_ics([case], filevine_link=filevine_link, attorney_email=attorney_email)
@@ -197,7 +202,7 @@ if st.session_state.cases is not None:
                                     ics_filename = f"{case_number}_{defendant}.ics"
                                     
                                     st.download_button(
-                                        label="� Generate & Download",
+                                        label="💾 Generate & Download",
                                         data=ics_content,
                                         file_name=ics_filename,
                                         mime="text/calendar",
@@ -234,7 +239,7 @@ if st.session_state.cases is not None:
                     key="combined_filevine"
                 )
                 combined_attorney_name = st.text_input(
-                    "Attorney Email",
+                    "Attorney Name",
                     placeholder="attorney",
                     key="combined_email",
                     help="Enter just the name (e.g., 'chris' for chris@dexterlaw.com)"
@@ -242,11 +247,15 @@ if st.session_state.cases is not None:
                 # Auto-append @dexterlaw.com
                 combined_attorney_email = f"{combined_attorney_name.strip()}@dexterlaw.com" if combined_attorney_name.strip() else ""
                 
+                # Show preview of what will be used
+                if combined_attorney_email:
+                    st.caption(f"📧 Will use: {combined_attorney_email}")
+                
                 all_ics_content = cases_to_ics(cases, filevine_link=combined_filevine_link, attorney_email=combined_attorney_email)
                 ics_filename = f"calendar_{search_info['first_name']}_{search_info['last_name']}_{datetime.now().strftime('%Y%m%d')}.ics"
                 
                 st.download_button(
-                    label="� Generate & Download All",
+                    label="💾 Generate & Download All",
                     data=all_ics_content,
                     file_name=ics_filename,
                     mime="text/calendar",
