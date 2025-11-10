@@ -59,24 +59,6 @@ with st.sidebar:
     )
     
     st.markdown("---")
-    
-    date_filter = st.selectbox(
-        "Date Filter",
-        options=["all", "specific"],
-        format_func=lambda x: "All Dates" if x == "all" else "Specific Date"
-    )
-    
-    specific_date = None
-    if date_filter == "specific":
-        specific_date = st.date_input("Select Date")
-    
-    location_filter = st.text_input(
-        "Location Filter",
-        value="all",
-        help="Enter 'all' for all locations or a specific court code"
-    )
-    
-    st.markdown("---")
     search_button = st.button("🔎 Search Cases", type="primary", use_container_width=True)
 
 # Main content area
@@ -86,20 +68,15 @@ if search_button:
     elif len(first_name) < 2 or len(last_name) < 2:
         st.error("⚠️ First and last name must be at least 2 characters")
     else:
-        with st.spinner("🔄 Searching court cases..."):
+        with st.spinner("Searching court cases..."):
             try:
-                # Prepare date parameter
-                date_param = "all"
-                if date_filter == "specific" and specific_date:
-                    date_param = specific_date.strftime("%Y-%m-%d")
-                
                 # Search for cases
                 cases = search_court_cases(
                     search_type="a",
                     first_name=first_name.upper(),
                     last_name=last_name.upper(),
-                    date=date_param,
-                    location=location_filter
+                    date="all",
+                    location="all"
                 )
                 
                 if not cases:
@@ -197,10 +174,9 @@ else:
     st.markdown("""
     ### How to Use:
     1. Enter the attorney's **first name** and **last name** in the sidebar
-    2. Optionally select a specific date or location filter
-    3. Click the **Search Cases** button
-    4. View all cases for that attorney in an organized format
-    5. Download results as CSV if needed
+    2. Click the **Search Cases** button
+    3. View all cases for that attorney in an organized format
+    4. Download results as CSV if needed
     
     ### Features:
     - 📊 Summary metrics showing total cases, virtual hearings, and court types
