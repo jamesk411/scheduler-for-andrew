@@ -126,7 +126,9 @@ for container in case_containers:
     all_links = container.find_all('a')
     for link in all_links:
         href = link.get('href', '')
-        if 'webex.com' in str(href):
+        href_str = str(href).lower()
+        # Check for webex.com or webex in the URL path
+        if 'webex.com' in href_str or 'webex' in href_str:
             case_data['webex_url'] = href
             break
     
