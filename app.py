@@ -254,7 +254,15 @@ if st.session_state.cases is not None and st.session_state.search_info is not No
                                     case_number = case.get('case_number', 'unknown')
                                     defendant = case.get('defendant', 'event').split()[0] if case.get('defendant') else 'event'
                                     defendant = sanitize_filename(defendant.upper())
-                                    ics_filename = f"{case_number}_{defendant}.ics"
+                                    # Get plaintiff name parts for filename
+                                    plaintiff = case.get('plaintiff', '')
+                                    plaintiff_parts = plaintiff.split() if plaintiff else []
+                                    first_name = plaintiff_parts[0] if len(plaintiff_parts) > 0 else 'Unknown'
+                                    last_name = plaintiff_parts[-1] if len(plaintiff_parts) > 1 else ''
+                                    first_name = sanitize_filename(first_name)
+                                    last_name = sanitize_filename(last_name)
+                                    name_part = f"{first_name}_{last_name}" if last_name else first_name
+                                    ics_filename = f"{case_number}_{name_part}_{defendant}.ics"
                                     
                                     st.download_button(
                                         label="💾 Generate & Download",

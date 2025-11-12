@@ -160,8 +160,16 @@ def parse_court_cases(html_content: str) -> List[Dict[str, Any]]:
             party_text = parties_div[0].get_text(separator='|', strip=True)
             parts = party_text.split('|')
             if len(parts) >= 3:
-                case_data['plaintiff'] = parts[0].replace('vs.', '').strip()
-                case_data['defendant'] = parts[2].strip() if len(parts) > 2 else ''
+                plaintiff_raw = parts[0].replace('vs.', '').strip()
+                defendant_raw = parts[2].strip() if len(parts) > 2 else ''
+                
+                # Remove "et al.", "et al", "et. al.", etc. from names
+                import re
+                plaintiff_clean = re.sub(r'\s+et\s+al\.?', '', plaintiff_raw, flags=re.IGNORECASE).strip()
+                defendant_clean = re.sub(r'\s+et\s+al\.?', '', defendant_raw, flags=re.IGNORECASE).strip()
+                
+                case_data['plaintiff'] = plaintiff_clean
+                case_data['defendant'] = defendant_clean
         
         # Extract judge, room, and hearing purpose
         info_divs = container.find_all('div', class_='col-xs-12 col-sm-6')

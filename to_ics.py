@@ -92,19 +92,27 @@ def create_ics_event(case: Dict[str, Any], filevine_link: str = "", attorney_ema
     dtend = format_ics_datetime(end_dt)
     
     # Create summary
-    defendant = case.get('defendant', 'N/A').split()[0] if case.get('defendant') else 'N/A'
+    defendant_full = case.get('defendant', 'N/A')
+    # Get first and last name only (skip middle names/suffixes)
+    defendant_parts = defendant_full.split() if defendant_full and defendant_full != 'N/A' else []
+    if len(defendant_parts) >= 2:
+        defendant = f"{defendant_parts[0]} {defendant_parts[-1]}"  # First and last name
+    elif len(defendant_parts) == 1:
+        defendant = defendant_parts[0]
+    else:
+        defendant = 'N/A'
+    
     hearing_type = case.get('hearing_type', 'HEARING').upper()
     hearing_purpose = case.get('hearing_purpose', 'HEARING')
     court = case.get('court', 'Court').split('-')[0].strip() if case.get('court') else 'Court'
     judge = case.get('judge', 'Judge')
-    attorney = case.get('attorney', 'CD')
     
     # Determine if virtual or in person
     webex_url = case.get('webex_url', '')
     hearing_mode = "VIRTUAL" if webex_url else "IN PERSON"
     
-    # Build summary like the examples
-    summary = f"{defendant} – {hearing_mode} – {hearing_purpose} – {court} – J.{judge.split()[-1] if judge != 'N/A' else 'N/A'} – {case_number} – {attorney.split()[0] if attorney else 'CD'}"
+    # Build summary like the examples - use "Auto Scheduler" at the end instead of attorney name
+    summary = f"{defendant} – {hearing_mode} – {hearing_purpose} – {court} – J.{judge.split()[-1] if judge != 'N/A' else 'N/A'} – {case_number} – Auto Scheduler"
     summary = escape_ics_text(summary)
     
     # Create description
